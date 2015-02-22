@@ -1,0 +1,147 @@
+---
+title: "Practical Machine Learning Project"
+author: "Anand P"
+date: "Saturday, Saturday 22, 2015"
+output: html_document
+---
+
+In this report, we will build machine learning algorithm to predict activity quality (activity class) from activity monitors. We will use Weight Lifting Excerse dataset from the website http://groupware.les.inf.puc-rio.br/har. It consists of data from accelerometers on the belt, forearm, arm and dumbell of 6 participants which were asked to perform barbell lifts correctly and incorrectly in 5 different ways. These activities are classefied into A (correct), B, C, D, E. Then We will use Cross Validation to validate our model and use this algorithm to predict a set of 20 observations.
+
+## Summary
+
+We cleaned the dataset by removing few variables and then used Random Forest to build model with 100 trees. The model gives the accuracy of 0.9942 when cross validated on the test data which was not used during the training. Then we used selected model to predict 20 observations.
+
+## Data
+
+Weight Lifting Exercises Data Set: is to investigate "how well" this activity was performed by 6 male participants using a dumbbell (1.25kg).
+
+Four sensors were used on: forearm, arm, lumbar belt and dumbbell.
+
+* Data per sensor:
+* Position: roll, pitch, yaw
+* Acceleration - 3 axis (x, y, z)
+* Gyroscope - 3 axis (x, y, z)
+* Magnetometer - 3 axis (x, y, z)
+
+Total Data per sensor: 3 X 4 = 12
+
+
+### Loading the data:
+
+```{r echo=TRUE }
+setwd("D:/projects/OnlineCourses/08 Practical Machine Learning/project")
+data <- read.csv("pml-training.csv",na.strings = c("", " ","NA"))
+```
+
+### Cleaning the Data
+
+There are total 160 variables in the dataset.
+
+We will remove variables that were created for calculation purposes. These variables were created for groups of measurements defined by variable "new_window". 
+So we will remove variables starting with 
+* kurtosis_ 
+* skewness_
+* min_
+* max_
+* amplitude_
+* var_
+* avg_
+* stddev_
+
+we will treat each measurement as independent observation ignoring following variables (first 7 variables):
+* first variable X which identifies row
+* raw_timestamp_part_1
+* raw_timestamp_part_2
+* cvtd_timestamp
+* user_name which identifies user
+* new_window
+* num_window
+
+We are now left with 53 variables. The data doesn't have any NAs.
+
+```{r echo=TRUE,,warning=FALSE }
+f <- grepl("^kurtosis_|^skewness_|min_|max_|amplitude_|var_|avg_|stddev_", names(data));
+f[1:7] <- TRUE # remove first 7 variables
+data <- data[,!f];
+str(data);
+any(is.na(data))
+```
+
+## Building Model
+
+### Creating Training and Test Datasets
+
+Let's first create training and test datasets
+```{r echo=TRUE,warning=FALSE}
+library(caret);
+set.seed(113);
+inTrain <- createDataPartition(y=data$classe, p=0.70,list=FALSE)
+training <- data[inTrain,];
+testing <- data[-inTrain,];
+```
+
+We will use directly use randomForest function to build our model with ntree as 100 since it takes forever if we try to build random forest model using train function in caret package.
+```{r echo=TRUE,cache=TRUE, cache.path = '.cache/',warning=FALSE }
+library(randomForest)
+rf <- randomForest(classe~.,data=training,PROXIMITY=TRUE,ntree=100);
+rf
+```
+
+### Importance of variables 
+Let's see most important of variables in our model:
+
+```{r echo=TRUE,cache.path = '.cache/',warning=FALSE}
+library(randomForest)
+varImpPlot(rf,n.var=5)
+```
+
+Variables roll_belt, yaw_belt, magnet_dumbbell_z, pitch_forearm, magnet_dumbbell_y, pitch_belt seems to be more important.
+
+# Cross Validation
+
+Let's do cross validation the test data. Although Random Forest internally does CV while selecting model, we will test our model on the test data which was not used during training.
+
+Impurity in classification models is measured with misclassification error, Gini index and 
+Deviance or Information Gain.
+
+Model predicted class A in all 1672 cases out of 1674 and predicted class B in 1131 cases out of 1139 cases with class B.
+
+Misclassfication Error for class B = 8/1131 = 0.00702
+
+Overall Accuracy is 0.9942 and Out of Sample error rate = 1 - 0.9942 = 0.0058.
+
+```{r echo=TRUE,cache.path = '.cache/' }
+library(randomForest)
+pred <- predict(rf,testing[,-53])
+confusionMatrix(pred,testing$classe)
+```
+
+There is A reduction of error rate as no of trees was increased from 20 to 100. 
+
+## Predicting 20 test cases
+
+We will now use this model to 20 test cases. First we will clean the test dataset and remove the same variables that we removed from our training dataset. 
+```{r echo=TRUE,cache.path = '.cache/' }
+t <- read.csv("pml-testing.csv",na.strings = c("", " ","NA"));
+t <- t[,!f];
+pred <- predict(rf,newdata=t[,-53])
+pred
+```
+
+We will create output file with prediction for each test case using the following function.
+
+```{r echo=TRUE, eval=FALSE }
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(pred)
+```
+
+
+
+
+

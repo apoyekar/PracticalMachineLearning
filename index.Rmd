@@ -5,7 +5,7 @@ date: "Saturday, Saturday 22, 2015"
 output: html_document
 ---
 
-In this report, we will build machine learning algorithm to predict activity quality (activity class) from activity monitors. We will use Weight Lifting Excerse dataset from the website http://groupware.les.inf.puc-rio.br/har. It consists of data from accelerometers on the belt, forearm, arm and dumbell of 6 participants which were asked to perform barbell lifts correctly and incorrectly in 5 different ways. These activities are classefied into A (correct), B, C, D, E. Then We will use Cross Validation to validate our model and use this algorithm to predict a set of 20 observations.
+In this report, we will build machine learning algorithm to predict activity quality (activity class) from activity monitors. We will use Weight Lifting Excerse dataset from the website http://groupware.les.inf.puc-rio.br/har. It consists of data from accelerometers on the belt, forearm, arm and dumbell of 6 participants which were asked to perform barbell lifts correctly and incorrectly in 5 different ways. These activities are classefied into A (correct), B, C, D, E. We will then use Cross Validation to validate our model and use the model to predict a set of 20 observations.
 
 ## Summary
 
